@@ -105,6 +105,5 @@ var searchData=
   ['lt8912b_5freg_5fmain_5ftx_5fanalog_5f37',['LT8912B_REG_MAIN_TX_ANALOG_37',['../_adafruit___l_t8912_b_8h.html#aafc4eb1abcee35e583457dd825a91339',1,'Adafruit_LT8912B.h']]],
   ['lt8912b_5freg_5fmain_5ftx_5fanalog_5f38',['LT8912B_REG_MAIN_TX_ANALOG_38',['../_adafruit___l_t8912_b_8h.html#af4acd6ffdaafaa8bbb350f8d70f3673f',1,'Adafruit_LT8912B.h']]],
   ['lt8912b_5freg_5fmain_5ftx_5fanalog_5f60',['LT8912B_REG_MAIN_TX_ANALOG_60',['../_adafruit___l_t8912_b_8h.html#acd30cb8d1ed0aac305b091f0ad9f2d03',1,'Adafruit_LT8912B.h']]],
-  ['lt8912b_5freg_5fmain_5ftx_5fcontrol',['LT8912B_REG_MAIN_TX_CONTROL',['../_adafruit___l_t8912_b_8h.html#af61a38664484f09872b17c6de91913bb',1,'Adafruit_LT8912B.h']]],
-  ['lt8912b_5ftiming',['LT8912B_Timing',['../struct_l_t8912_b___timing.html',1,'']]]
+  ['lt8912b_5freg_5fmain_5ftx_5fcontrol',['LT8912B_REG_MAIN_TX_CONTROL',['../_adafruit___l_t8912_b_8h.html#af61a38664484f09872b17c6de91913bb',1,'Adafruit_LT8912B.h']]]
 ];

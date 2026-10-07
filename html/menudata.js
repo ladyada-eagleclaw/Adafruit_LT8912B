@@ -21,4 +21,9 @@ var menudata={children:[
 {text:"Functions",url:"functions_func.html"},
 {text:"Variables",url:"functions_vars.html"}]}]},
 {text:"Files",url:"files.html",children:[
-{text:"File List",url:"files.html"}]}]}
+{text:"File List",url:"files.html"},
+{text:"File Members",url:"globals.html",children:[
+{text:"All",url:"globals.html",children:[
+{text:"l",url:"globals.html#index_l"}]},
+{text:"Macros",url:"globals_defs.html",children:[
+{text:"l",url:"globals_defs.html#index_l"}]}]}]}]}

@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.13"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Adafruit LT8912B: src/Adafruit_LT8912B.h File Reference</title>
+<title>Adafruit LT8912B Arduino Library: src/Adafruit_LT8912B_P4.h File Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -21,9 +21,8 @@
  <tbody>
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
-   <div id="projectname">Adafruit LT8912B
+   <div id="projectname">Adafruit LT8912B Arduino Library
    </div>
-   <div id="projectbrief">Arduino LT8912B bridge control and ESP32-P4 DSI display</div>
   </td>
  </tr>
  </tbody>
@@ -66,32 +65,26 @@ $(function() {
   <div class="summary">
 <a href="#nested-classes">Classes</a>  </div>
   <div class="headertitle">
-<div class="title">Adafruit_LT8912B.h File Reference</div>  </div>
+<div class="title">Adafruit_LT8912B_P4.h File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p>Portable I2C control for the LT8912B MIPI DSI to HDMI/DVI bridge.  
+<p>ESP32-P4 DSI host for the LT8912B bridge.  
 <a href="#details">More...</a></p>
-<div class="textblock"><code>#include &lt;Adafruit_BusIO_Register.h&gt;</code><br />
-<code>#include &lt;Adafruit_I2CDevice.h&gt;</code><br />
-<code>#include &lt;Arduino.h&gt;</code><br />
-<code>#include &lt;Wire.h&gt;</code><br />
+<div class="textblock"><code>#include &quot;<a class="el" href="_adafruit___l_t8912_b_8h_source.html">Adafruit_LT8912B.h</a>&quot;</code><br />
+<code>#include &quot;sdkconfig.h&quot;</code><br />
+<code>#include &quot;esp_lcd_mipi_dsi.h&quot;</code><br />
+<code>#include &quot;esp_ldo_regulator.h&quot;</code><br />
 </div>
-<p><a href="Adafruit__LT8912B_8h_source.html">Go to the source code of this file.</a></p>
+<p><a href="_adafruit___l_t8912_b___p4_8h_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Classes</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structLT8912B__Timing.html">LT8912B_Timing</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">DSI video timing. Defaults describe the 800 x 480 example mode.  <a href="structLT8912B__Timing.html#details">More...</a><br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classAdafruit__LT8912B.html">Adafruit_LT8912B</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">LT8912B control over its three fixed I2C register-bank addresses.  <a href="classAdafruit__LT8912B.html#details">More...</a><br /></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_adafruit___l_t8912_b___p4.html">Adafruit_LT8912B_P4</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>Portable I2C control for the LT8912B MIPI DSI to HDMI/DVI bridge. </p>
-<p>SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD SPDX-FileCopyrightText: 2026 Adafruit Industries SPDX-License-Identifier: Apache-2.0</p>
-<p>Modified by Adafruit: Arduino/BusIO interface, timing validation and video-only configuration. Adapted from Espressif's esp_lcd_lt8912b driver. </p>
+<div class="textblock"><p>ESP32-P4 DSI host for the LT8912B bridge. </p>
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>

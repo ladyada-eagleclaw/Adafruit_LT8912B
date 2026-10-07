@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.13"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Adafruit LT8912B: src/Adafruit_LT8912B_P4.cpp File Reference</title>
+<title>Adafruit LT8912B Arduino Library: src/Adafruit_LT8912B.cpp File Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -21,9 +21,8 @@
  <tbody>
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
-   <div id="projectname">Adafruit LT8912B
+   <div id="projectname">Adafruit LT8912B Arduino Library
    </div>
-   <div id="projectbrief">Arduino LT8912B bridge control and ESP32-P4 DSI display</div>
   </td>
  </tr>
  </tbody>
@@ -64,17 +63,18 @@ $(function() {
 </div><!-- top -->
 <div class="header">
   <div class="headertitle">
-<div class="title">Adafruit_LT8912B_P4.cpp File Reference</div>  </div>
+<div class="title">Adafruit_LT8912B.cpp File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p>ESP32-P4 DSI setup for an independently controlled LT8912B.  
+<p>Arduino/BusIO adaptation of Espressif's LT8912B video driver.  
 <a href="#details">More...</a></p>
-<div class="textblock"><code>#include &quot;<a class="el" href="Adafruit__LT8912B__P4_8h_source.html">Adafruit_LT8912B_P4.h</a>&quot;</code><br />
+<div class="textblock"><code>#include &quot;<a class="el" href="_adafruit___l_t8912_b_8h_source.html">Adafruit_LT8912B.h</a>&quot;</code><br />
 <code>#include &lt;math.h&gt;</code><br />
-<code>#include &quot;esp_lcd_panel_ops.h&quot;</code><br />
 </div><a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>ESP32-P4 DSI setup for an independently controlled LT8912B. </p>
+<div class="textblock"><p>Arduino/BusIO adaptation of Espressif's LT8912B video driver. </p>
+<p>SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD SPDX-FileCopyrightText: 2026 Adafruit Industries SPDX-License-Identifier: Apache-2.0</p>
+<p>Modified by Adafruit: portable I2C control, checked transactions and timing arguments, configurable lane count, optional physical reset, DVI default, and disabled audio. Original: esp_lcd_lt8912b in espressif/esp-bsp. </p>
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
