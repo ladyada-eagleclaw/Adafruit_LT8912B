@@ -7,10 +7,10 @@
 #if defined(ARDUINO_ARCH_ESP32) && defined(CONFIG_IDF_TARGET_ESP32P4)
 #include <math.h>
 
+#include "esp_lcd_panel_ops.h"
+
 /** Create an uninitialized P4 DSI host. */
 Adafruit_LT8912B_P4::Adafruit_LT8912B_P4() {}
-
-#include "esp_lcd_panel_ops.h"
 
 /** Release display resources. Keep the bridge alive until this completes. */
 Adafruit_LT8912B_P4::~Adafruit_LT8912B_P4() {
@@ -33,12 +33,25 @@ bool Adafruit_LT8912B_P4::begin(Adafruit_LT8912B& bridge,
                     timing.hBackPorch;
   uint32_t vTotal = (uint32_t)timing.height + timing.vFrontPorch +
                     timing.vSync + timing.vBackPorch;
-  if (_bridge || buffers < 1 || buffers > 3 || !timing.width ||
-      !timing.height || !isfinite(timing.pixelClockMHz) ||
-      timing.pixelClockMHz <= 0 || !laneBitRateMbps || !timing.hSync ||
-      timing.hSync > 255 || !timing.vSync || timing.vSync > 255 ||
-      hTotal > 65535 || vTotal > 65535 || timing.vic > 127 ||
-      timing.aspectRatio > 2) {
+  if (_bridge || buffers < 1 || buffers > 3) {
+    return false;
+  }
+  if (!timing.width || !timing.height || !laneBitRateMbps) {
+    return false;
+  }
+  if (!isfinite(timing.pixelClockMHz) || timing.pixelClockMHz <= 0) {
+    return false;
+  }
+  if (!timing.hSync || timing.hSync > 255) {
+    return false;
+  }
+  if (!timing.vSync || timing.vSync > 255) {
+    return false;
+  }
+  if (hTotal > 65535 || vTotal > 65535) {
+    return false;
+  }
+  if (timing.vic > 127 || timing.aspectRatio > 2) {
     return false;
   }
   _bridge = &bridge;
@@ -61,7 +74,6 @@ bool Adafruit_LT8912B_P4::begin(Adafruit_LT8912B& bridge,
   esp_lcd_dpi_panel_config_t dpi = {};
   dpi.dpi_clk_src = MIPI_DSI_DPI_CLK_SRC_PLL_F160M;
   dpi.dpi_clock_freq_mhz = timing.pixelClockMHz;
-  dpi.pixel_format = LCD_COLOR_PIXEL_FORMAT_RGB888;
   dpi.in_color_format = LCD_COLOR_FMT_RGB888;
   dpi.out_color_format = LCD_COLOR_FMT_RGB888;
   dpi.num_fbs = buffers;

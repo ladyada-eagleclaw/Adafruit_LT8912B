@@ -16,7 +16,8 @@ jobs:
         python-version: '3.x'
     - uses: actions/checkout@v4
       with:
-         repository: adafruit/ci-arduino
+         repository: ladyada-eagleclaw/ci-arduino
+         ref: main
          path: ci
 
     - name: pre-install
@@ -25,10 +26,13 @@ jobs:
     - name: clang
       run: python3 ci/run-clang-format.py -e "ci/*" -e "bin/*" -r .
     - name: test platforms
-      run: python3 ci/build_platform.py main_platforms
+      run: python3 ci/build_platform.py metro_esp32p4
 
     - name: doxy
       env:
         GH_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         PRETTYNAME: "Adafruit LT8912B Arduino Library"
-      run: bash ci/doxy_gen_and_deploy.sh
+      run: |
+        cp ci/Doxyfile.default Doxyfile
+        printf '\nPROJECT_NAME = "%s"\nPREDEFINED += ARDUINO_ARCH_ESP32=1 CONFIG_IDF_TARGET_ESP32P4=1\n' "$PRETTYNAME" >> Doxyfile
+        bash ci/doxy_gen_and_deploy.sh src

@@ -29,14 +29,14 @@ Adafruit_LT8912B::~Adafruit_LT8912B() {
 /**
  * @brief Initialize I2C control and optionally perform a physical reset.
  * @param wire I2C bus, configured for the board's control pins by the sketch.
- * @param resetPin Active-low reset GPIO, or 0xFFFF to leave reset to the
- * caller.
+ * @param resetPin Active-low reset GPIO, or a negative value to leave reset to
+ * the caller.
  * @return True when all three fixed addresses (0x48, 0x49, 0x4A) acknowledge.
  * @note This checks acknowledgements, not silicon identity: no chip-ID check is
  * implemented. Disconnect the adapter's DDC switch before calling this method;
  * a monitor's DDC/ISP devices can collide with the bridge register addresses.
  */
-bool Adafruit_LT8912B::begin(TwoWire* wire, uint16_t resetPin) {
+bool Adafruit_LT8912B::begin(int16_t resetPin, TwoWire* wire) {
   _initialized = false;
   if (!wire) {
     return false;
@@ -46,18 +46,24 @@ bool Adafruit_LT8912B::begin(TwoWire* wire, uint16_t resetPin) {
   delete _dsi;
   delete _avi;
   // The chip exposes main, DSI/CEC, and AVI/audio banks at fixed I2C addresses.
-  _main = new Adafruit_I2CDevice(0x48, wire);
-  _dsi = new Adafruit_I2CDevice(0x49, wire);
-  _avi = new Adafruit_I2CDevice(0x4A, wire);
+  _main = new Adafruit_I2CDevice(LT8912B_I2C_MAIN, wire);
+  _dsi = new Adafruit_I2CDevice(LT8912B_I2C_DSI, wire);
+  _avi = new Adafruit_I2CDevice(LT8912B_I2C_AVI, wire);
   if (!_main || !_dsi || !_avi) {
     return false;
   }
 
   _resetPin = resetPin;
-  if (_resetPin != 0xFFFF && !reset()) {
+  if (_resetPin >= 0 && !reset()) {
     return false;
   }
-  if (!_main->begin() || !_dsi->begin() || !_avi->begin()) {
+  if (!_main->begin()) {
+    return false;
+  }
+  if (!_dsi->begin()) {
+    return false;
+  }
+  if (!_avi->begin()) {
     return false;
   }
   _initialized = true;
@@ -71,7 +77,7 @@ bool Adafruit_LT8912B::begin(TwoWire* wire, uint16_t resetPin) {
  * writes cannot report whether the physical reset reached the bridge.
  */
 bool Adafruit_LT8912B::reset() {
-  if (_resetPin == 0xFFFF) {
+  if (_resetPin < 0) {
     return false;
   }
   digitalWrite(_resetPin, LOW);
@@ -120,11 +126,20 @@ bool Adafruit_LT8912B::configure(const LT8912B_Timing& timing, uint8_t lanes) {
                     timing.hBackPorch;
   uint32_t vTotal = (uint32_t)timing.height + timing.vFrontPorch +
                     timing.vSync + timing.vBackPorch;
-  if (!_initialized || lanes < 1 || lanes > 4 || !timing.width ||
-      !timing.height || !timing.hSync || timing.hSync > 255 || !timing.vSync ||
-      timing.vSync > 255 || hTotal > 65535 || vTotal > 65535 ||
-      !isfinite(timing.pixelClockMHz) || timing.pixelClockMHz <= 0 ||
-      timing.vic > 127 || timing.aspectRatio > 2) {
+  if (!_initialized || lanes < 1 || lanes > 4) {
+    return false;
+  }
+  if (!timing.width || !timing.height || hTotal > 65535 || vTotal > 65535) {
+    return false;
+  }
+  if (!timing.hSync || timing.hSync > 255 || !timing.vSync ||
+      timing.vSync > 255) {
+    return false;
+  }
+  if (!isfinite(timing.pixelClockMHz) || timing.pixelClockMHz <= 0) {
+    return false;
+  }
+  if (timing.vic > 127 || timing.aspectRatio > 2) {
     return false;
   }
 
@@ -139,115 +154,141 @@ bool Adafruit_LT8912B::configure(const LT8912B_Timing& timing, uint8_t lanes) {
   // public bit definitions; keep the original values and comments together.
   const RegisterValue digitalClock[] = {
       /* Digital clock en */
-      {0x02, 0xF7}, {0x08, 0xFF}, {0x09, 0xFF},
-      {0x0A, 0xFF}, {0x0B, 0x7C}, {0x0C, 0xFF},
+      {LT8912B_REG_MAIN_DIGITAL_CLOCK_02, 0xF7},
+      {LT8912B_REG_MAIN_DIGITAL_CLOCK_08, 0xFF},
+      {LT8912B_REG_MAIN_DIGITAL_CLOCK_09, 0xFF},
+      {LT8912B_REG_MAIN_DIGITAL_CLOCK_0A, 0xFF},
+      {LT8912B_REG_MAIN_DIGITAL_CLOCK_0B, 0x7C},
+      {LT8912B_REG_MAIN_DIGITAL_CLOCK_0C, 0xFF},
   };
   const RegisterValue txAnalog[] = {
       /* Tx Analog */
-      {0x31, 0xE1}, {0x32, 0xE1}, {0x33, 0x0C},
-      {0x37, 0x00}, {0x38, 0x22}, {0x60, 0x82},
+      {LT8912B_REG_MAIN_TX_ANALOG_31, 0xE1},
+      {LT8912B_REG_MAIN_TX_ANALOG_32, 0xE1},
+      {LT8912B_REG_MAIN_TX_CONTROL, 0x0C},
+      {LT8912B_REG_MAIN_TX_ANALOG_37, 0x00},
+      {LT8912B_REG_MAIN_TX_ANALOG_38, 0x22},
+      {LT8912B_REG_MAIN_TX_ANALOG_60, 0x82},
   };
   const RegisterValue cbusAnalog[] = {
       /* Cbus Analog */
-      {0x39, 0x45},
-      {0x3A, 0x00},
-      {0x3B, 0x00},
+      {LT8912B_REG_MAIN_CBUS_ANALOG_39, 0x45},
+      {LT8912B_REG_MAIN_CBUS_ANALOG_3A, 0x00},
+      {LT8912B_REG_MAIN_CBUS_ANALOG_3B, 0x00},
   };
   const RegisterValue hdmiPLL[] = {
       /* HDMI PLL Analog */
-      {0x44, 0x31},
-      {0x55, 0x44},
-      {0x57, 0x01},
-      {0x5A, 0x02},
+      {LT8912B_REG_MAIN_LVDS_PLL_CONTROL, 0x31},
+      {LT8912B_REG_MAIN_HDMI_PLL_ANALOG_55, 0x44},
+      {LT8912B_REG_MAIN_HDMI_PLL_ANALOG_57, 0x01},
+      {LT8912B_REG_MAIN_HDMI_PLL_ANALOG_5A, 0x02},
   };
   const RegisterValue mipiAnalog[] = {
-      {0x3E, 0xD6}, // No MIPI P/N swap.
-      {0x3F, 0xD4}, // EQ.
-      {0x41, 0x3C}, // MIPI analog control.
+      {LT8912B_REG_MAIN_MIPI_PN_CONTROL, 0xD6},     // No MIPI P/N swap.
+      {LT8912B_REG_MAIN_MIPI_EQ, 0xD4},             // EQ.
+      {LT8912B_REG_MAIN_MIPI_ANALOG_CONTROL, 0x3C}, // MIPI analog control.
   };
   uint8_t laneCode = lanes;
   if (lanes == 4) {
     laneCode = 0; // Vendor encoding: 00=4, 01=1, 02=2, 03=3 lanes.
   }
   const RegisterValue mipiBasic[] = {
-      {0x10, 0x01},                        // Termination enable.
-      {0x11, 0x10},                        // Settle.
-      {DSI_LANES, laneCode}, {0x14, 0x00}, // Debug mux.
-      {0x15, 0x00},                        // No lane swap.
-      {0x1A, 0x03},                        // H shift 3.
-      {0x1B, 0x03},                        // V shift 3.
+      {LT8912B_REG_DSI_TERMINATION, 0x01}, // Termination enable.
+      {LT8912B_REG_DSI_SETTLE, 0x10},      // Settle.
+      {LT8912B_REG_DSI_LANES, laneCode},
+      {LT8912B_REG_DSI_DEBUG_MUX, 0x00}, // Debug mux.
+      {LT8912B_REG_DSI_LANE_SWAP, 0x00}, // No lane swap.
+      {LT8912B_REG_DSI_H_SHIFT, 0x03},   // H shift 3.
+      {LT8912B_REG_DSI_V_SHIFT, 0x03},   // V shift 3.
   };
   const RegisterValue ddsConfig[] = {
-      {0x4E, 0x93}, // strm_sw_freq_word[7:0]
-      {0x4F, 0x3E}, // strm_sw_freq_word[15:8]
-      {0x50, 0x29}, // strm_sw_freq_word[23:16]
-      {0x51, 0x80}, // [0]=strm_sw_freq_word[24]
-      {0x1E, 0x4F},
-      {0x1F, 0x5E}, // full_value
-      {0x20, 0x01},
-      {0x21, 0x2C}, // full_value1
-      {0x22, 0x01},
-      {0x23, 0xFA}, // full_value2
-      {0x24, 0x00},
-      {0x25, 0xC8}, // full_value3
-      {0x26, 0x00},
-      {0x27, 0x5E}, // empty_value
-      {0x28, 0x01},
-      {0x29, 0x2C}, // empty_value1
-      {0x2A, 0x01},
-      {0x2B, 0xFA}, // empty_value2
-      {0x2C, 0x00},
-      {0x2D, 0xC8}, // empty_value3
-      {0x2E, 0x00},
-      {0x42, 0x64}, // tmr_set[7:0]:100 us
-      {0x43, 0x00}, // tmr_set[15:8]
-      {0x44, 0x04}, // Timer step and following DDS tuning coefficients.
-      {0x45, 0x00},
-      {0x46, 0x59},
-      {0x47, 0x00},
-      {0x48, 0xF2},
-      {0x49, 0x06},
-      {0x4A, 0x00},
-      {0x4B, 0x72},
-      {0x4C, 0x45},
-      {0x4D, 0x00},
-      {0x52, 0x08}, // Trend step and following DDS tuning
-                    // coefficients.
-      {0x53, 0x00},
-      {0x54, 0xB2},
-      {0x55, 0x00},
-      {0x56, 0xE4},
-      {0x57, 0x0D},
-      {0x58, 0x00},
-      {0x59, 0xE4},
-      {0x5A, 0x8A},
-      {0x5B, 0x00},
-      {0x5C, 0x34},
-      {0x51, 0x00}, // Release DDS control.
+      {LT8912B_REG_DSI_DDS_FREQUENCY_LOW, 0x93},    // strm_sw_freq_word[7:0]
+      {LT8912B_REG_DSI_DDS_FREQUENCY_MIDDLE, 0x3E}, // strm_sw_freq_word[15:8]
+      {LT8912B_REG_DSI_DDS_FREQUENCY_HIGH, 0x29},   // strm_sw_freq_word[23:16]
+      {LT8912B_REG_DSI_DDS_CONTROL_51, 0x80},       // [0]=strm_sw_freq_word[24]
+      {LT8912B_REG_DSI_DDS_CONTROL_1E, 0x4F},
+      {LT8912B_REG_DSI_FIFO_FULL_0_LOW, 0x5E}, // full_value
+      {LT8912B_REG_DSI_FIFO_FULL_0_HIGH, 0x01},
+      {LT8912B_REG_DSI_FIFO_FULL_1_LOW, 0x2C}, // full_value1
+      {LT8912B_REG_DSI_FIFO_FULL_1_HIGH, 0x01},
+      {LT8912B_REG_DSI_FIFO_FULL_2_LOW, 0xFA}, // full_value2
+      {LT8912B_REG_DSI_FIFO_FULL_2_HIGH, 0x00},
+      {LT8912B_REG_DSI_FIFO_FULL_3_LOW, 0xC8}, // full_value3
+      {LT8912B_REG_DSI_FIFO_FULL_3_HIGH, 0x00},
+      {LT8912B_REG_DSI_FIFO_EMPTY_0_LOW, 0x5E}, // empty_value
+      {LT8912B_REG_DSI_FIFO_EMPTY_0_HIGH, 0x01},
+      {LT8912B_REG_DSI_FIFO_EMPTY_1_LOW, 0x2C}, // empty_value1
+      {LT8912B_REG_DSI_FIFO_EMPTY_1_HIGH, 0x01},
+      {LT8912B_REG_DSI_FIFO_EMPTY_2_LOW, 0xFA}, // empty_value2
+      {LT8912B_REG_DSI_FIFO_EMPTY_2_HIGH, 0x00},
+      {LT8912B_REG_DSI_FIFO_EMPTY_3_LOW, 0xC8}, // empty_value3
+      {LT8912B_REG_DSI_FIFO_EMPTY_3_HIGH, 0x00},
+      {LT8912B_REG_DSI_DDS_TIMER_LOW, 0x64},  // tmr_set[7:0]:100 us
+      {LT8912B_REG_DSI_DDS_TIMER_HIGH, 0x00}, // tmr_set[15:8]
+      {LT8912B_REG_DSI_DDS_TIMER_STEP,
+       0x04}, // Timer step and following DDS tuning coefficients.
+      {LT8912B_REG_DSI_DDS_TIMER_COEFFICIENT_45, 0x00},
+      {LT8912B_REG_DSI_DDS_TIMER_COEFFICIENT_46, 0x59},
+      {LT8912B_REG_DSI_DDS_TIMER_COEFFICIENT_47, 0x00},
+      {LT8912B_REG_DSI_DDS_TIMER_COEFFICIENT_48, 0xF2},
+      {LT8912B_REG_DSI_DDS_TIMER_COEFFICIENT_49, 0x06},
+      {LT8912B_REG_DSI_DDS_TIMER_COEFFICIENT_4A, 0x00},
+      {LT8912B_REG_DSI_DDS_TIMER_COEFFICIENT_4B, 0x72},
+      {LT8912B_REG_DSI_DDS_TIMER_COEFFICIENT_4C, 0x45},
+      {LT8912B_REG_DSI_DDS_TIMER_COEFFICIENT_4D, 0x00},
+      {LT8912B_REG_DSI_DDS_TREND_STEP, 0x08}, // Trend step and following DDS
+                                              // tuning coefficients.
+      {LT8912B_REG_DSI_DDS_TREND_COEFFICIENT_53, 0x00},
+      {LT8912B_REG_DSI_DDS_TREND_COEFFICIENT_54, 0xB2},
+      {LT8912B_REG_DSI_DDS_TREND_COEFFICIENT_55, 0x00},
+      {LT8912B_REG_DSI_DDS_TREND_COEFFICIENT_56, 0xE4},
+      {LT8912B_REG_DSI_DDS_TREND_COEFFICIENT_57, 0x0D},
+      {LT8912B_REG_DSI_DDS_TREND_COEFFICIENT_58, 0x00},
+      {LT8912B_REG_DSI_DDS_TREND_COEFFICIENT_59, 0xE4},
+      {LT8912B_REG_DSI_DDS_TREND_COEFFICIENT_5A, 0x8A},
+      {LT8912B_REG_DSI_DDS_TREND_COEFFICIENT_5B, 0x00},
+      {LT8912B_REG_DSI_DDS_TREND_COEFFICIENT_5C, 0x34},
+      {LT8912B_REG_DSI_DDS_CONTROL_51, 0x00}, // Release DDS control.
   };
   if (!writeSequence(_main, digitalClock,
-                     sizeof(digitalClock) / sizeof(RegisterValue)) ||
-      !writeSequence(_main, txAnalog,
-                     sizeof(txAnalog) / sizeof(RegisterValue)) ||
-      !writeSequence(_main, cbusAnalog,
-                     sizeof(cbusAnalog) / sizeof(RegisterValue)) ||
-      !writeSequence(_main, hdmiPLL, sizeof(hdmiPLL) / sizeof(RegisterValue)) ||
-      !writeSequence(_main, mipiAnalog,
-                     sizeof(mipiAnalog) / sizeof(RegisterValue)) ||
-      !writeSequence(_dsi, mipiBasic,
-                     sizeof(mipiBasic) / sizeof(RegisterValue)) ||
-      !writeSequence(_dsi, ddsConfig,
-                     sizeof(ddsConfig) / sizeof(RegisterValue)) ||
-      !writeTiming(timing)) {
+                     sizeof(digitalClock) / sizeof(RegisterValue))) {
+    return false;
+  }
+  if (!writeSequence(_main, txAnalog,
+                     sizeof(txAnalog) / sizeof(RegisterValue))) {
+    return false;
+  }
+  if (!writeSequence(_main, cbusAnalog,
+                     sizeof(cbusAnalog) / sizeof(RegisterValue))) {
+    return false;
+  }
+  if (!writeSequence(_main, hdmiPLL, sizeof(hdmiPLL) / sizeof(RegisterValue))) {
+    return false;
+  }
+  if (!writeSequence(_main, mipiAnalog,
+                     sizeof(mipiAnalog) / sizeof(RegisterValue))) {
+    return false;
+  }
+  if (!writeSequence(_dsi, mipiBasic,
+                     sizeof(mipiBasic) / sizeof(RegisterValue))) {
+    return false;
+  }
+  if (!writeSequence(_dsi, ddsConfig,
+                     sizeof(ddsConfig) / sizeof(RegisterValue))) {
+    return false;
+  }
+  if (!writeTiming(timing)) {
     return false;
   }
 
   // Sync polarity occupies only bits 1:0. Preserve the other reset fields.
-  Adafruit_BusIO_Register sync(_main, SYNC_POLARITY);
+  Adafruit_BusIO_Register sync(_main, LT8912B_REG_MAIN_SYNC_POLARITY);
   Adafruit_BusIO_RegisterBits horizontalPositive(&sync, 1, 1);
   Adafruit_BusIO_RegisterBits verticalPositive(&sync, 1, 0);
-  if (!horizontalPositive.write(timing.hSyncPositive) ||
-      !verticalPositive.write(timing.vSyncPositive)) {
+  if (!horizontalPositive.write(timing.hSyncPositive)) {
+    return false;
+  }
+  if (!verticalPositive.write(timing.vSyncPositive)) {
     return false;
   }
 
@@ -258,7 +299,7 @@ bool Adafruit_LT8912B::configure(const LT8912B_Timing& timing, uint8_t lanes) {
   uint8_t checksum = (uint8_t)(0x5F - aspect - timing.vic);
   uint8_t payload[14] = {checksum, 0x10, aspect, 0, timing.vic};
   for (uint8_t index = 0; index < sizeof(payload); index++) {
-    Adafruit_BusIO_Register infoframe(_avi, AVI_CHECKSUM + index);
+    Adafruit_BusIO_Register infoframe(_avi, LT8912B_REG_AVI_CHECKSUM + index);
     if (!infoframe.write(payload[index])) {
       return false;
     }
@@ -268,32 +309,47 @@ bool Adafruit_LT8912B::configure(const LT8912B_Timing& timing, uint8_t lanes) {
   }
 
   const RegisterValue lvdsBypass[] = {
-      {0x44, 0x30},               // LVDS power up for bypass configuration.
-      {0x51, 0x05}, {0x50, 0x24}, // CP=50 uA.
-      {0x51, 0x2D}, // Pixel clock reference, second-order passive LPF PLL.
-      {0x52, 0x04}, // loopdiv=0; use second-order PLL.
-      {0x69, 0x0E}, // CP_PRESET_DIV_RATIO.
-      {0x69, 0x8E}, {0x6A, 0x00},
-      {0x6C, 0xB8},               // RGD_CP_SOFT_K_EN, RGD_CP_SOFT_K[13:8].
-      {0x6B, 0x51}, {0x04, 0xFB}, // Core PLL reset.
-      {0x04, 0xFF}, {0x7F, 0x00}, // Disable scaler.
-      {0xA8, 0x13},               // VESA format (0x33 would select JEIDA).
-      {0x44, 0x31}, // Disable LVDS output; use HDMI/DVI transmitter only.
+      {LT8912B_REG_MAIN_LVDS_PLL_CONTROL,
+       0x30}, // LVDS power up for bypass configuration.
+      {LT8912B_REG_MAIN_LVDS_PLL_REFERENCE, 0x05},
+      {LT8912B_REG_MAIN_LVDS_PLL_CURRENT, 0x24}, // CP=50 uA.
+      {LT8912B_REG_MAIN_LVDS_PLL_REFERENCE,
+       0x2D}, // Pixel clock reference, second-order passive LPF PLL.
+      {LT8912B_REG_MAIN_LVDS_PLL_LOOP,
+       0x04}, // loopdiv=0; use second-order PLL.
+      {LT8912B_REG_MAIN_LVDS_CP_PRESET, 0x0E}, // CP_PRESET_DIV_RATIO.
+      {LT8912B_REG_MAIN_LVDS_CP_PRESET, 0x8E},
+      {LT8912B_REG_MAIN_LVDS_CP_6A, 0x00},
+      {LT8912B_REG_MAIN_LVDS_CP_SOFT_K_HIGH,
+       0xB8}, // RGD_CP_SOFT_K_EN, RGD_CP_SOFT_K[13:8].
+      {LT8912B_REG_MAIN_LVDS_CP_SOFT_K_LOW, 0x51},
+      {LT8912B_REG_MAIN_CORE_PLL_RESET, 0xFB}, // Core PLL reset.
+      {LT8912B_REG_MAIN_CORE_PLL_RESET, 0xFF},
+      {LT8912B_REG_MAIN_SCALER_CONTROL, 0x00}, // Disable scaler.
+      {LT8912B_REG_MAIN_LVDS_FORMAT,
+       0x13}, // VESA format (0x33 would select JEIDA).
+      {LT8912B_REG_MAIN_LVDS_PLL_CONTROL,
+       0x31}, // Disable LVDS output; use HDMI/DVI transmitter only.
   };
   // Video-only change: keep audio acquisition and packets disabled. These are
   // the LT8912B audio shutdown values, not Espressif's default I2S enable
   // table.
   const RegisterValue audioOff[] = {
-      {0x06, 0x00}, // Stop audio acquisition.
-      {0x07, 0x00}, // Disable audio clock regeneration.
-      {0x34, 0x52}, // Disable I2S input.
-      {0x3C, 0x40}, // Disable audio/null packet insertion.
+      {LT8912B_REG_AVI_AUDIO_ACQUISITION, 0x00}, // Stop audio acquisition.
+      {LT8912B_REG_AVI_AUDIO_CLOCK, 0x00}, // Disable audio clock regeneration.
+      {LT8912B_REG_AVI_I2S_CONTROL, 0x52}, // Disable I2S input.
+      {LT8912B_REG_AVI_PACKET_CONTROL,
+       0x40}, // Disable audio/null packet insertion.
   };
   if (!writeSequence(_main, lvdsBypass,
-                     sizeof(lvdsBypass) / sizeof(RegisterValue)) ||
-      !writeSequence(_avi, audioOff,
-                     sizeof(audioOff) / sizeof(RegisterValue)) ||
-      !setHDMI(false)) {
+                     sizeof(lvdsBypass) / sizeof(RegisterValue))) {
+    return false;
+  }
+  if (!writeSequence(_avi, audioOff,
+                     sizeof(audioOff) / sizeof(RegisterValue))) {
+    return false;
+  }
+  if (!setHDMI(false)) {
     return false;
   }
   return enableOutput(true);
@@ -311,23 +367,23 @@ bool Adafruit_LT8912B::writeTiming(const LT8912B_Timing& timing) {
   uint16_t vTotal =
       timing.height + timing.vFrontPorch + timing.vSync + timing.vBackPorch;
   const RegisterValue values[] = {
-      {H_SYNC, (uint8_t)timing.hSync},
-      {V_SYNC, (uint8_t)timing.vSync},
-      {H_ACTIVE, (uint8_t)(timing.width % 256)},
-      {H_ACTIVE + 1, (uint8_t)(timing.width / 256)},
-      {0x2F, 0x0C}, // FIFO buffer length 12.
-      {H_TOTAL, (uint8_t)(hTotal % 256)},
-      {H_TOTAL + 1, (uint8_t)(hTotal / 256)},
-      {V_TOTAL, (uint8_t)(vTotal % 256)},
-      {V_TOTAL + 1, (uint8_t)(vTotal / 256)},
-      {V_BACK_PORCH, (uint8_t)(timing.vBackPorch % 256)},
-      {V_BACK_PORCH + 1, (uint8_t)(timing.vBackPorch / 256)},
-      {V_FRONT_PORCH, (uint8_t)(timing.vFrontPorch % 256)},
-      {V_FRONT_PORCH + 1, (uint8_t)(timing.vFrontPorch / 256)},
-      {H_BACK_PORCH, (uint8_t)(timing.hBackPorch % 256)},
-      {H_BACK_PORCH + 1, (uint8_t)(timing.hBackPorch / 256)},
-      {H_FRONT_PORCH, (uint8_t)(timing.hFrontPorch % 256)},
-      {H_FRONT_PORCH + 1, (uint8_t)(timing.hFrontPorch / 256)},
+      {LT8912B_REG_DSI_H_SYNC, (uint8_t)timing.hSync},
+      {LT8912B_REG_DSI_V_SYNC, (uint8_t)timing.vSync},
+      {LT8912B_REG_DSI_H_ACTIVE, (uint8_t)(timing.width % 256)},
+      {LT8912B_REG_DSI_H_ACTIVE + 1, (uint8_t)(timing.width / 256)},
+      {LT8912B_REG_DSI_FIFO_BUFFER_LENGTH, 0x0C}, // FIFO buffer length 12.
+      {LT8912B_REG_DSI_H_TOTAL, (uint8_t)(hTotal % 256)},
+      {LT8912B_REG_DSI_H_TOTAL + 1, (uint8_t)(hTotal / 256)},
+      {LT8912B_REG_DSI_V_TOTAL, (uint8_t)(vTotal % 256)},
+      {LT8912B_REG_DSI_V_TOTAL + 1, (uint8_t)(vTotal / 256)},
+      {LT8912B_REG_DSI_V_BACK_PORCH, (uint8_t)(timing.vBackPorch % 256)},
+      {LT8912B_REG_DSI_V_BACK_PORCH + 1, (uint8_t)(timing.vBackPorch / 256)},
+      {LT8912B_REG_DSI_V_FRONT_PORCH, (uint8_t)(timing.vFrontPorch % 256)},
+      {LT8912B_REG_DSI_V_FRONT_PORCH + 1, (uint8_t)(timing.vFrontPorch / 256)},
+      {LT8912B_REG_DSI_H_BACK_PORCH, (uint8_t)(timing.hBackPorch % 256)},
+      {LT8912B_REG_DSI_H_BACK_PORCH + 1, (uint8_t)(timing.hBackPorch / 256)},
+      {LT8912B_REG_DSI_H_FRONT_PORCH, (uint8_t)(timing.hFrontPorch % 256)},
+      {LT8912B_REG_DSI_H_FRONT_PORCH + 1, (uint8_t)(timing.hFrontPorch / 256)},
   };
   return writeSequence(_dsi, values, sizeof(values) / sizeof(RegisterValue));
 }
@@ -336,7 +392,7 @@ bool Adafruit_LT8912B::writeTiming(const LT8912B_Timing& timing) {
  * @return True if all four writes succeeded.
  */
 bool Adafruit_LT8912B::resetReceiver() {
-  Adafruit_BusIO_Register mipiReset(_main, MIPI_RESET);
+  Adafruit_BusIO_Register mipiReset(_main, LT8912B_REG_MAIN_MIPI_RESET);
   // Vendor full-register reset values also retain the other released blocks.
   if (!mipiReset.write(0x7F)) {
     return false;
@@ -345,7 +401,7 @@ bool Adafruit_LT8912B::resetReceiver() {
   if (!mipiReset.write(0xFF)) {
     return false;
   }
-  Adafruit_BusIO_Register ddsReset(_main, DDS_RESET);
+  Adafruit_BusIO_Register ddsReset(_main, LT8912B_REG_MAIN_DDS_RESET);
   if (!ddsReset.write(0xFB)) {
     return false;
   }
@@ -362,7 +418,7 @@ bool Adafruit_LT8912B::setHDMI(bool enabled) {
   if (!_initialized) {
     return false;
   }
-  Adafruit_BusIO_Register mode(_main, HDMI_MODE);
+  Adafruit_BusIO_Register mode(_main, LT8912B_REG_MAIN_HDMI_MODE);
   Adafruit_BusIO_RegisterBits hdmiEnabled(&mode, 1, 0);
   return hdmiEnabled.write(enabled);
 }
@@ -377,26 +433,23 @@ bool Adafruit_LT8912B::enableOutput(bool enabled) {
     return false;
   }
   // Vendor enable/disable values are 0x0E/0x0C; only bit 1 changes.
-  Adafruit_BusIO_Register transmitter(_main, TX_CONTROL);
+  Adafruit_BusIO_Register transmitter(_main, LT8912B_REG_MAIN_TX_CONTROL);
   Adafruit_BusIO_RegisterBits outputEnabled(&transmitter, 1, 1);
   return outputEnabled.write(enabled);
 }
 
 /**
  * @brief Read HDMI hot-plug detect from the bridge.
- * @return 1 if connected, 0 if disconnected, or -1 before begin()/on I2C error.
+ * @return True if HPD is high, false if low or before begin().
+ * @note BusIO RegisterBits reads cannot distinguish an I2C read error from a
+ * high HPD input. This reports a register field, not guaranteed cable presence
+ * when the control bus has failed.
  */
-int8_t Adafruit_LT8912B::getHPD() {
+bool Adafruit_LT8912B::getHPD() {
   if (!_initialized) {
-    return -1;
+    return false;
   }
-  // RegisterBits::read() cannot distinguish a failed read from HPD=1. Use a
-  // checked byte snapshot for this status decision and return an explicit
-  // error.
-  HotPlugStatus status = {};
-  Adafruit_BusIO_Register hotPlug(_main, HPD_STATUS);
-  if (!hotPlug.read(&status.raw)) {
-    return -1;
-  }
-  return status.bits.connected;
+  Adafruit_BusIO_Register hotPlug(_main, LT8912B_REG_MAIN_HPD_STATUS);
+  Adafruit_BusIO_RegisterBits connected(&hotPlug, 1, 7);
+  return connected.read();
 }

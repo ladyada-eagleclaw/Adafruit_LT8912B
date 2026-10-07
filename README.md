@@ -16,17 +16,25 @@ included in this version.
 
 ## Getting started
 
-Install this folder as an Arduino library, together with **Adafruit BusIO** and
-**Adafruit GFX Library**. The P4 examples require an ESP32-P4 board with PSRAM
-and Arduino-ESP32 3.3.11 (or a compatible ESP-IDF 5.5 build). The helper uses
+Install this folder as an Arduino library, together with **Adafruit BusIO**,
+**Adafruit GFX Library**, and **Adafruit TestBed**. The P4 examples require an
+ESP32-P4 board with PSRAM. They compile with Arduino-ESP32 3.3.11 and the
+current 4.0.x source core. The helper uses
 the legacy PHY clock selection tested on the original P4 silicon.
+
+Select **Adafruit Metro ESP32-P4** in the Arduino board menu. These examples
+require the updated Metro board definition, whose `pins_arduino.h` supplies
+`PIN_DSI_RESET` and the shared default I2C pins. Update an older prototype board
+definition before compiling; no manual SDA/SCL pin setup is needed in the sketches.
+The board definition is proposed in
+[Arduino-ESP32 #12980](https://github.com/espressif/arduino-esp32/pull/12980).
 
 - `bridge_status`: portable I2C connection and bridge status example.
 - `p4_colorbars`: ESP32-P4 framebuffer output with a static test pattern.
 - `p4_graphics`: ESP32-P4 output using an Adafruit GFX canvas.
 
-The P4 examples use the Metro P4 adapter wiring and the previously tested
-800 x 480 video timing. Check their pin definitions and timing configuration
+The P4 examples use the Metro P4 board definition and the previously tested
+800 x 480 video timing. Check the board definition and timing configuration
 before using another board or monitor. Monitor acceptance of a timing or sync
 polarity must be tested; this library does not select modes from EDID.
 
@@ -45,15 +53,17 @@ MJPEG video; MP4 soundtrack decoding is not supplied here.
 
 ## Build coverage
 
-The standard Adafruit CI workflow builds the portable example on its main
-platform matrix and checks formatting and Doxygen. That matrix currently has
-no ESP32-P4 target, so the P4 examples are excluded using `.none.test.only`.
-They require separate P4 compile and hardware checks.
+The Adafruit CI workflow builds all examples on its `metro_esp32p4` target,
+and checks formatting and standard Doxygen documentation. This target uses
+the source core while the new board definition awaits upstream inclusion.
+It temporarily uses the CI fork containing
+[ci-arduino #234](https://github.com/adafruit/ci-arduino/pull/234).
 
-Local checks on 2026-10-07: `bridge_status` compiled for Arduino Uno (AVR
-core 1.8.8). Both P4 examples compiled for `esp32:esp32:adafruit_metro_esp32p4`
-with Arduino-ESP32 3.3.11. Doxygen 1.8.13 passed with no warnings. The new
-library has not been uploaded to the board; the paused audio test is unchanged.
+Local checks on 2026-10-07: all three examples compiled for the new Metro P4
+board definition on the Arduino-ESP32 4.0.x source core. `p4_colorbars` also
+compiled with Arduino-ESP32 3.3.11. Formatting checks passed, and Doxygen
+1.8.13 using the standard CI template passed with no warnings. The new library
+has not been uploaded to the board; the paused audio test is unchanged.
 
 ## Credits and license
 

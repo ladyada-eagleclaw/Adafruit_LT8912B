@@ -3,13 +3,19 @@
 
 #include <Adafruit_GFX.h>
 #include <Adafruit_LT8912B_P4.h>
+#include <Adafruit_TestBed.h>
 
 #if !defined(CONFIG_IDF_TARGET_ESP32P4)
 #error "This example requires an ESP32-P4 board with PSRAM."
 #endif
+#if !defined(PIN_DSI_RESET)
+#error "Select Adafruit Metro ESP32-P4 and install its updated board definition."
+#endif
 
-// Metro P4 DSI connector: SDA GPIO33, SCL GPIO32, reset GPIO20.
-const uint8_t RESET_PIN = 20;
+// The Metro P4 board definition supplies the DSI reset and default I2C pins.
+const uint8_t RESET_PIN = PIN_DSI_RESET;
+#define MONITOR_EDID_ADDRESS 0x50
+Adafruit_TestBed testbed;
 Adafruit_LT8912B bridge;
 Adafruit_LT8912B_P4 display;
 LT8912B_Timing timing; // Defaults to 800 x 480.
@@ -25,17 +31,10 @@ void setup() {
 
   digitalWrite(RESET_PIN, LOW);
   pinMode(RESET_PIN, OUTPUT);
-  if (!Wire.begin(33, 32, 100000)) {
-    halt("Could not start the I2C bus.");
-  }
-  Wire.beginTransmission(0x50);
-  uint8_t ddcStatus = Wire.endTransmission();
-  if (ddcStatus == 0) {
+  if (testbed.scanI2CBus(MONITOR_EDID_ADDRESS)) {
     halt("DDC detected: turn the adapter DDC switch OFF and remove any QT bypass.");
-  } else if (ddcStatus != 2) { // Only an address NACK confirms no EDID response.
-    halt("I2C error: could not verify that DDC is disconnected.");
   }
-  if (!bridge.begin(&Wire, RESET_PIN)) {
+  if (!bridge.begin(RESET_PIN)) {
     halt("LT8912B not found.");
   }
 
