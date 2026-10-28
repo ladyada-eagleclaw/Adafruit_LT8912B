@@ -217,7 +217,7 @@ Static Public Member Functions</h2></td></tr>
   </dd>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>True when all three fixed addresses (0x48, 0x49, 0x4A) acknowledge. </dd></dl>
-<dl class="section note"><dt>Note</dt><dd>This checks acknowledgements, not silicon identity: no chip-ID check is implemented. Disconnect the adapter's DDC switch before calling this method; a monitor's DDC/ISP devices can collide with the bridge register addresses. </dd></dl>
+<dl class="section note"><dt>Note</dt><dd>Checks acknowledgements, not silicon identity. Before <a class="el" href="class_adafruit___l_t8912_b.html#a412ab4c29a05f6e2254921158e922d75" title="Initialize I2C control and optionally perform a physical reset. ">begin()</a>, hold the bridge in reset and check 0x48-0x4A for other devices if DDC shares the bus. Isolate DDC only when a monitor device conflicts with a bridge address. </dd></dl>
 
 </div>
 </div>
