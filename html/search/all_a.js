@@ -1,5 +1,5 @@
 var searchData=
 [
-  ['sethdmi',['setHDMI',['../class_adafruit___l_t8912_b.html#a1aee9a219e4a70da0d888825798f17a7',1,'Adafruit_LT8912B']]],
-  ['show',['show',['../class_adafruit___l_t8912_b___p4.html#a4ee672ced9f9e01e60b046dec5b40587',1,'Adafruit_LT8912B_P4']]]
+  ['readedidtiming',['readEDIDTiming',['../class_adafruit___l_t8912_b.html#a5b4e7c63da095480bdc93ddc1a67f35a',1,'Adafruit_LT8912B']]],
+  ['reset',['reset',['../class_adafruit___l_t8912_b.html#a7288e3e1da4b860e8ae277a4aa582d0e',1,'Adafruit_LT8912B']]]
 ];

@@ -1,6 +1,5 @@
 var searchData=
 [
-  ['getframebuffer',['getFrameBuffer',['../class_adafruit___l_t8912_b___p4.html#a02917949b66699ee810c955c608aabdc',1,'Adafruit_LT8912B_P4']]],
-  ['gethpd',['getHPD',['../class_adafruit___l_t8912_b.html#adc1644767bf2455a00044224b05816e0',1,'Adafruit_LT8912B']]],
-  ['getpanel',['getPanel',['../class_adafruit___l_t8912_b___p4.html#a7afcd77b3070089835aebd575d76fd4b',1,'Adafruit_LT8912B_P4']]]
+  ['enableoutput',['enableOutput',['../class_adafruit___l_t8912_b.html#abe0036f8268fbb632c678af8336b1a68',1,'Adafruit_LT8912B']]],
+  ['end',['end',['../class_adafruit___l_t8912_b___g_f_x565.html#ac9729b03576bf3d3b4ef65ac0ea854ff',1,'Adafruit_LT8912B_GFX565']]]
 ];

@@ -1,4 +1,6 @@
 var searchData=
 [
-  ['operator_3d',['operator=',['../class_adafruit___l_t8912_b.html#a2292bb519816aef11c0b4db6877e752b',1,'Adafruit_LT8912B::operator=()'],['../class_adafruit___l_t8912_b___p4.html#a887b75833dc5e1f0070df6ffb088df49',1,'Adafruit_LT8912B_P4::operator=()']]]
+  ['getframebuffer',['getFrameBuffer',['../class_adafruit___l_t8912_b___g_f_x565.html#a2b73da0ea85666d9e695a44006085544',1,'Adafruit_LT8912B_GFX565']]],
+  ['gethpd',['getHPD',['../class_adafruit___l_t8912_b.html#adc1644767bf2455a00044224b05816e0',1,'Adafruit_LT8912B']]],
+  ['getpanel',['getPanel',['../class_adafruit___l_t8912_b___g_f_x565.html#ac6c1eceddb187051abdd20b8bdcedab9',1,'Adafruit_LT8912B_GFX565']]]
 ];
